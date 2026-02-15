@@ -90,7 +90,13 @@ remote_exec() {
 remote_sudo() {
     local host="$1"
     shift
-    remote_exec "$host" "echo '$SIGIL_SSH_PASSWORD' | sudo -S bash -s" "$@"
+    local script
+    script=$(cat)
+    ssh -o StrictHostKeyChecking=no \
+        -o ConnectTimeout=10 \
+        -i "$SIGIL_SSH_KEY" \
+        "$SIGIL_SSH_USER@$host" \
+        "echo '${SIGIL_SSH_PASSWORD}' | sudo -S bash -c $(printf '%q' "$script")"
 }
 
 # --- Разбор аргументов ---
