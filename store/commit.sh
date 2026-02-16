@@ -25,9 +25,9 @@ fi
 git -C "$SIGIL_STORE_PATH" add -A
 
 if git -C "$SIGIL_STORE_PATH" diff --cached --quiet; then
-    log_info "Нет изменений для коммита"
+    log_info "Нет изменений для коммита" >&2
     exit 0
 fi
 
-git -C "$SIGIL_STORE_PATH" commit -m "$MESSAGE"
-log_success "Коммит: $MESSAGE"
+git -C "$SIGIL_STORE_PATH" commit -m "$MESSAGE" >&2
+log_success "Коммит: $MESSAGE" >&2
