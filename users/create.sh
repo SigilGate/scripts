@@ -4,9 +4,10 @@
 # Создание записи пользователя в хранилище
 #
 # Использование:
-#   ./users/create.sh --username "Ivan" --core-node 202.223.48.9
+#   ./users/create.sh --username "Ivan" [--core-node 202.223.48.9]
 #
 # Необязательные параметры:
+#   --core-node <ip>               (если не задан — core_nodes: [])
 #   --email user@example.com
 #   --telegram @username
 #   --telegram-id 123456789
@@ -28,8 +29,8 @@ parse_args "$@"
 USERNAME="${ARGS[username]:-}"
 CORE_NODE="${ARGS[core-node]:-}"
 
-if [ -z "$USERNAME" ] || [ -z "$CORE_NODE" ]; then
-    log_error "Использование: $0 --username <name> --core-node <ip>"
+if [ -z "$USERNAME" ]; then
+    log_error "Использование: $0 --username <name> [--core-node <ip>]"
     exit 1
 fi
 
@@ -72,29 +73,44 @@ for USER_FILE in "$SIGIL_STORE_PATH"/users/*.json; do
     fi
 done
 
-# --- Проверка Core-ноды ---
+# --- Проверка уникальности telegram_id ---
 
-NODE_JSON=$(store_read "nodes" "${CORE_NODE}.json") || {
-    log_error "Нода $CORE_NODE не найдена в хранилище"
-    exit 1
-}
-
-NODE_STATUS=$(echo "$NODE_JSON" | jq -r '.status')
-if [ "$NODE_STATUS" != "active" ]; then
-    log_error "Нода $CORE_NODE не активна (статус: $NODE_STATUS)"
-    exit 1
+if [ -n "$TELEGRAM_ID" ]; then
+    for USER_FILE in "$SIGIL_STORE_PATH"/users/*.json; do
+        [ -f "$USER_FILE" ] || continue
+        EXISTING_TG_ID=$(jq -r '.telegram_id // empty' "$USER_FILE")
+        if [ "$EXISTING_TG_ID" = "$TELEGRAM_ID" ]; then
+            log_error "Пользователь с Telegram ID $TELEGRAM_ID уже существует"
+            exit 1
+        fi
+    done
 fi
 
-ROLE_FILE="$SIGIL_STORE_PATH/roles/core_${CORE_NODE}.json"
-if [ ! -f "$ROLE_FILE" ]; then
-    log_error "Нода $CORE_NODE не имеет роли core"
-    exit 1
-fi
+# --- Проверка Core-ноды (если указана) ---
 
-ROLE_STATUS=$(jq -r '.status' "$ROLE_FILE")
-if [ "$ROLE_STATUS" != "active" ]; then
-    log_error "Роль core для ноды $CORE_NODE не активна (статус: $ROLE_STATUS)"
-    exit 1
+if [ -n "$CORE_NODE" ]; then
+    NODE_JSON=$(store_read "nodes" "${CORE_NODE}.json") || {
+        log_error "Нода $CORE_NODE не найдена в хранилище"
+        exit 1
+    }
+
+    NODE_STATUS=$(echo "$NODE_JSON" | jq -r '.status')
+    if [ "$NODE_STATUS" != "active" ]; then
+        log_error "Нода $CORE_NODE не активна (статус: $NODE_STATUS)"
+        exit 1
+    fi
+
+    ROLE_FILE="$SIGIL_STORE_PATH/roles/core_${CORE_NODE}.json"
+    if [ ! -f "$ROLE_FILE" ]; then
+        log_error "Нода $CORE_NODE не имеет роли core"
+        exit 1
+    fi
+
+    ROLE_STATUS=$(jq -r '.status' "$ROLE_FILE")
+    if [ "$ROLE_STATUS" != "active" ]; then
+        log_error "Роль core для ноды $CORE_NODE не активна (статус: $ROLE_STATUS)"
+        exit 1
+    fi
 fi
 
 # --- Вычисление следующего ID ---
@@ -133,12 +149,14 @@ jq -n \
         email: (if $email == "" then null else $email end),
         telegram: (if $telegram == "" then null else $telegram end),
         telegram_id: (if $telegram_id == "" then null else ($telegram_id | tonumber) end),
-        core_nodes: [$core_node],
+        core_nodes: (if $core_node == "" then [] else [$core_node] end),
         created: $created
     }' > "$USER_PATH"
 
 log_info "Пользователь создан: $USERNAME (ID: $NEW_ID)" >&2
-log_info "Core-нода: $CORE_NODE" >&2
+if [ -n "$CORE_NODE" ]; then
+    log_info "Core-нода: $CORE_NODE" >&2
+fi
 
 # Вывод ID для использования в цепочке
 echo "$NEW_ID"
