@@ -4,7 +4,7 @@
 # Модификация полей записи пользователя
 #
 # Использование:
-#   ./users/modify.sh --id <USER_ID> [--username "NewName"] [--status active|archived]
+#   ./users/modify.sh --id <USER_ID> [--username "NewName"] [--status active|inactive|archived]
 #                     [--email user@example.com] [--telegram @username]
 #                     [--telegram-id 123456789] [--hash "password_hash"]
 #
@@ -78,8 +78,8 @@ for FIELD in "${CHANGES[@]}"; do
             done
             ;;
         status)
-            if [ "$VALUE" != "active" ] && [ "$VALUE" != "archived" ]; then
-                log_error "Статус должен быть active или archived: $VALUE"
+            if [ "$VALUE" != "active" ] && [ "$VALUE" != "inactive" ] && [ "$VALUE" != "archived" ]; then
+                log_error "Статус должен быть active, inactive или archived: $VALUE"
                 exit 1
             fi
             ;;

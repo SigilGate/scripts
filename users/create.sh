@@ -11,6 +11,7 @@
 #   --telegram @username
 #   --telegram-id 123456789
 #   --hash "password_hash"
+#   --status active|inactive|archived  (по умолчанию: active)
 #
 # Выводит ID созданного пользователя в stdout
 #
@@ -38,6 +39,12 @@ EMAIL="${ARGS[email]:-}"
 TELEGRAM="${ARGS[telegram]:-}"
 TELEGRAM_ID="${ARGS[telegram-id]:-}"
 HASH="${ARGS[hash]:-}"
+STATUS="${ARGS[status]:-active}"
+
+if [ "$STATUS" != "active" ] && [ "$STATUS" != "inactive" ] && [ "$STATUS" != "archived" ]; then
+    log_error "Статус должен быть active, inactive или archived: $STATUS"
+    exit 1
+fi
 
 if [ -n "$EMAIL" ] && [[ "$EMAIL" != *@*.* ]]; then
     log_error "Некорректный email: $EMAIL"
@@ -111,6 +118,7 @@ CREATED=$(date '+%Y-%m-%d')
 jq -n \
     --argjson id "$NEW_ID" \
     --arg username "$USERNAME" \
+    --arg status "$STATUS" \
     --arg email "$EMAIL" \
     --arg telegram "$TELEGRAM" \
     --arg telegram_id "$TELEGRAM_ID" \
@@ -120,7 +128,7 @@ jq -n \
     '{
         id: $id,
         username: $username,
-        status: "active",
+        status: $status,
         hash: (if $hash == "" then null else $hash end),
         email: (if $email == "" then null else $email end),
         telegram: (if $telegram == "" then null else $telegram end),
