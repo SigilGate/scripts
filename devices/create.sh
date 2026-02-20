@@ -4,7 +4,7 @@
 # Создание записи устройства в хранилище
 #
 # Использование:
-#   ./devices/create.sh --user 1 --device "mobile_006"
+#   ./devices/create.sh --user 1 --device "mobile_006" [--status active|inactive|archived]
 #
 # Выводит UUID созданного устройства в stdout
 #
@@ -20,9 +20,15 @@ parse_args "$@"
 
 USER_ID="${ARGS[user]:-}"
 DEVICE_NAME="${ARGS[device]:-}"
+STATUS="${ARGS[status]:-active}"
 
 if [ -z "$USER_ID" ] || [ -z "$DEVICE_NAME" ]; then
-    log_error "Использование: $0 --user <id> --device <name>"
+    log_error "Использование: $0 --user <id> --device <name> [--status active|inactive|archived]"
+    exit 1
+fi
+
+if [ "$STATUS" != "active" ] && [ "$STATUS" != "inactive" ] && [ "$STATUS" != "archived" ]; then
+    log_error "Статус должен быть active, inactive или archived: $STATUS"
     exit 1
 fi
 
@@ -54,12 +60,13 @@ jq -n \
     --arg uuid "$UUID" \
     --argjson user_id "$USER_ID" \
     --arg device "$DEVICE_NAME" \
+    --arg status "$STATUS" \
     --arg created "$CREATED" \
     '{
         uuid: $uuid,
         user_id: $user_id,
         device: $device,
-        status: "active",
+        status: $status,
         created: $created
     }' > "$DEVICE_PATH"
 

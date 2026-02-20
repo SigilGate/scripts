@@ -4,7 +4,7 @@
 # Модификация полей записи устройства
 #
 # Использование:
-#   ./devices/modify.sh --uuid <UUID> [--device "new_name"] [--status active|archived]
+#   ./devices/modify.sh --uuid <UUID> [--device "new_name"] [--status active|inactive|archived]
 #
 # Можно передать несколько полей за один вызов.
 #
@@ -64,8 +64,8 @@ for FIELD in "${CHANGES[@]}"; do
             fi
             ;;
         status)
-            if [ "$VALUE" != "active" ] && [ "$VALUE" != "archived" ]; then
-                log_error "Статус должен быть active или archived: $VALUE"
+            if [ "$VALUE" != "active" ] && [ "$VALUE" != "inactive" ] && [ "$VALUE" != "archived" ]; then
+                log_error "Статус должен быть active, inactive или archived: $VALUE"
                 exit 1
             fi
             ;;
