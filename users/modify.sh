@@ -7,6 +7,7 @@
 #   ./users/modify.sh --id <USER_ID> [--username "NewName"] [--status active|inactive|archived]
 #                     [--email user@example.com] [--telegram @username]
 #                     [--telegram-id 123456789] [--hash "password_hash"]
+#                     [--add-core-node <IP>] [--remove-core-node <IP>]
 #
 # Можно передать несколько полей за один вызов.
 # Пустое значение ("") сбрасывает поле в null (для email, telegram, telegram-id, hash).
@@ -39,7 +40,7 @@ USERNAME=$(jq -r '.username' "$USER_PATH")
 
 # --- Определение полей для модификации ---
 
-MODIFIABLE_FIELDS=(username status email telegram telegram-id hash)
+MODIFIABLE_FIELDS=(username status email telegram telegram-id hash add-core-node remove-core-node)
 CHANGES=()
 
 for FIELD in "${MODIFIABLE_FIELDS[@]}"; do
@@ -104,6 +105,12 @@ for FIELD in "${CHANGES[@]}"; do
         hash)
             # Любое значение допустимо, пустое — сброс в null
             ;;
+        add-core-node|remove-core-node)
+            if [ -z "$VALUE" ]; then
+                log_error "IP ноды не может быть пустым"
+                exit 1
+            fi
+            ;;
     esac
 done
 
@@ -135,6 +142,12 @@ for FIELD in "${CHANGES[@]}"; do
             else
                 jq --arg val "$VALUE" ".${JSON_FIELD} = \$val" "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
             fi
+            ;;
+        add-core-node)
+            jq --arg node "$VALUE" '.core_nodes += [$node] | .core_nodes |= unique' "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
+            ;;
+        remove-core-node)
+            jq --arg node "$VALUE" '.core_nodes -= [$node]' "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
             ;;
         *)
             jq --arg val "$VALUE" ".${JSON_FIELD} = \$val" "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"

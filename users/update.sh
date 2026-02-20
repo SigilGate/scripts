@@ -4,9 +4,10 @@
 # Полный цикл модификации пользователя: изменение полей + коммит
 #
 # Использование:
-#   ./users/update.sh --id <USER_ID> [--username "NewName"] [--status active|archived]
+#   ./users/update.sh --id <USER_ID> [--username "NewName"] [--status active|inactive|archived]
 #                     [--email user@example.com] [--telegram @username]
 #                     [--telegram-id 123456789] [--hash "password_hash"]
+#                     [--add-core-node <IP>] [--remove-core-node <IP>]
 #
 # Можно передать несколько полей за один вызов.
 # Пустое значение ("") сбрасывает поле в null (для email, telegram, telegram-id, hash).
@@ -41,7 +42,7 @@ log_info "=== Модификация пользователя $USERNAME (ID: $US
 # --- Формирование аргументов для modify.sh ---
 
 MODIFY_ARGS=(--id "$USER_ID")
-MODIFIABLE_FIELDS=(username status email telegram telegram-id hash)
+MODIFIABLE_FIELDS=(username status email telegram telegram-id hash add-core-node remove-core-node)
 CHANGED_FIELDS=()
 
 for FIELD in "${MODIFIABLE_FIELDS[@]}"; do
