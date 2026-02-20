@@ -1,10 +1,11 @@
 #!/bin/bash
 #
-# devices/remove.sh [оркестратор]
-# Полный цикл удаления устройства: снятие с Entry-нод + удаление из хранилища + коммит
+# devices/deactivate.sh [оркестратор]
+# Деактивация устройства: снятие со всех Entry-нод + status=inactive + коммит
+# Запись в реестре сохраняется.
 #
 # Использование:
-#   ./devices/remove.sh --uuid <UUID>
+#   ./devices/deactivate.sh --uuid <UUID>
 #
 
 set -euo pipefail
@@ -31,7 +32,18 @@ DEVICE_JSON=$(store_read "devices" "${UUID}.json") || {
 }
 
 DEVICE_NAME=$(echo "$DEVICE_JSON" | jq -r '.device')
+DEVICE_STATUS=$(echo "$DEVICE_JSON" | jq -r '.status')
 USER_ID=$(echo "$DEVICE_JSON" | jq -r '.user_id')
+
+if [ "$DEVICE_STATUS" = "archived" ]; then
+    log_error "Устройство $UUID архивировано, операция невозможна"
+    exit 1
+fi
+
+if [ "$DEVICE_STATUS" = "inactive" ]; then
+    log_info "Устройство $UUID уже неактивно"
+    exit 0
+fi
 
 # --- Чтение данных пользователя ---
 
@@ -42,7 +54,7 @@ USER_JSON=$(store_read "users" "${USER_ID}.json") || {
 
 USERNAME=$(echo "$USER_JSON" | jq -r '.username')
 
-log_info "=== Удаление устройства $DEVICE_NAME ($UUID) пользователя $USERNAME ==="
+log_info "=== Деактивация устройства $DEVICE_NAME ($UUID) пользователя $USERNAME ==="
 
 ERRORS=0
 
@@ -65,26 +77,22 @@ while IFS= read -r NODE; do
     fi
 done < <(echo "$ENTRY_NODES" | jq -c '.[]')
 
-# --- [2] Удаление записи из хранилища ---
+# --- [2] Изменение статуса ---
 
-log_info "[2/3] Удаление записи из хранилища..."
-
-if ! "$SCRIPT_DIR/delete.sh" --uuid "$UUID"; then
-    log_error "Ошибка удаления файла устройства $UUID"
-    ERRORS=$((ERRORS + 1))
-fi
+log_info "[2/3] Изменение статуса на inactive..."
+"$SCRIPT_DIR/modify.sh" --uuid "$UUID" --status inactive
 
 # --- [3] Коммит ---
 
 log_info "[3/3] Коммит в хранилище..."
-"$SCRIPT_DIR/../store/commit.sh" --message "Remove device $DEVICE_NAME ($UUID) for user $USERNAME"
+"$SCRIPT_DIR/../store/commit.sh" --message "Deactivate device $DEVICE_NAME ($UUID) for user $USERNAME"
 
 # --- Результат ---
 
 echo ""
 if [ $ERRORS -gt 0 ]; then
-    log_error "=== Удаление завершено с $ERRORS ошибками ==="
+    log_error "=== Деактивация завершена с $ERRORS ошибками ==="
     exit 1
 else
-    log_success "=== Устройство $DEVICE_NAME удалено ==="
+    log_success "=== Устройство $DEVICE_NAME деактивировано ==="
 fi
