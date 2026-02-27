@@ -6,9 +6,111 @@
 
 | Файл | Назначение |
 |------|------------|
+| `sync.sh` | Оркестратор синхронизации репозиториев (каждые 15 минут) |
+| `pull-scripts.sh` | Pull обновлений репозитория scripts с GitHub |
+| `sigilgate-sync.service` | systemd-сервис для синхронизации (шаблон) |
+| `sigilgate-sync.timer` | systemd-таймер (каждые 15 минут, шаблон) |
 | `rotate-path.sh` | Скрипт ротации gRPC serviceName |
-| `sigilgate-rotate.service` | systemd-сервис (шаблон) |
-| `sigilgate-rotate.timer` | systemd-таймер (шаблон) |
+| `sigilgate-rotate.service` | systemd-сервис для ротации (шаблон) |
+| `sigilgate-rotate.timer` | systemd-таймер для ротации (шаблон) |
+
+## sync.sh [оркестратор]
+
+Запускает два скрипта синхронизации последовательно. Оба выполняются независимо: ошибка одного не прерывает второй.
+
+**Что делает:**
+1. Вызывает `store/push.sh` — отправляет локальные изменения registry на GitHub.
+2. Вызывает `core/pull-scripts.sh` — подтягивает обновления репозитория scripts с GitHub.
+
+Завершается с exit 1, если хотя бы один из этапов завершился с ошибкой. Статус и детали фиксируются в systemd journal.
+
+**Запуск вручную:**
+```bash
+./core/sync.sh
+```
+
+**Логи:**
+```bash
+journalctl -u sigilgate-sync -f
+```
+
+---
+
+## pull-scripts.sh [атомарный]
+
+Подтягивает обновления репозитория `scripts` с GitHub на Core-ноду.
+
+На Core репозиторий `scripts` используется только для чтения: все изменения вносятся в удалённый репозиторий через стандартный рабочий процесс, отсюда они подтягиваются на ноду. Локальные коммиты в этом репозитории — нештатная ситуация.
+
+**Переменные окружения:**
+
+| Переменная | Обязательная | Описание |
+|------------|-------------|----------|
+| `SIGIL_SCRIPTS_PATH` | да | Путь к локальному клону репозитория scripts |
+
+**Логика:**
+
+| Состояние | Действие |
+|-----------|----------|
+| remote == local | exit 0 (актуально) |
+| только remote впереди | `git pull --rebase` → exit 0 |
+| local содержит локальные коммиты | exit 1 (нештатная ситуация, требуется ручная проверка) |
+| pull --rebase не удался | `rebase --abort` → exit 1 |
+
+**Запуск вручную:**
+```bash
+./core/pull-scripts.sh
+```
+
+---
+
+## Развёртывание синхронизации (sigilgate-sync)
+
+### Требования
+
+- Клон репозитория `scripts` на Core-ноде (`SIGIL_SCRIPTS_PATH`)
+- Клон репозитория `registry` на Core-ноде (`SIGIL_STORE_PATH`)
+- SSH-доступ к GitHub по ключу (или HTTPS с токеном в remote URL)
+- `git` на Core-ноде
+- Сервисный пользователь с правом записи в оба репозитория
+
+### 1. Создать `.env`
+
+```bash
+cat >> <SCRIPTS_PATH>/.env << 'EOF'
+SIGIL_SCRIPTS_PATH=<SCRIPTS_REPO_PATH>
+EOF
+```
+
+### 2. Установить systemd-юниты
+
+```bash
+# Заменить <SERVICE_USER> и <SCRIPTS_PATH> реальными значениями
+sed -e 's|<SERVICE_USER>|sigil|g' \
+    -e 's|<SCRIPTS_PATH>|/home/sigil/SigilGate/scripts|g' \
+    core/sigilgate-sync.service \
+    | sudo tee /etc/systemd/system/sigilgate-sync.service
+
+sudo cp core/sigilgate-sync.timer /etc/systemd/system/sigilgate-sync.timer
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now sigilgate-sync.timer
+```
+
+### 3. Проверить
+
+```bash
+# Тестовый запуск
+sudo systemctl start sigilgate-sync.service
+
+# Логи
+journalctl -u sigilgate-sync -f
+
+# Статус таймера
+systemctl list-timers sigilgate-sync.timer
+```
+
+---
 
 ## rotate-path.sh
 
