@@ -1,0 +1,10 @@
+[Unit]
+Description=SigilGate gRPC path rotation timer
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=1800
+Persistent=true
+
+[Install]
+WantedBy=timers.target

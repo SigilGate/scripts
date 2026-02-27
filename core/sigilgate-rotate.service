@@ -1,0 +1,10 @@
+[Unit]
+Description=SigilGate gRPC path rotation
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=<SERVICE_USER>
+EnvironmentFile=<SCRIPTS_PATH>/.env
+ExecStart=<SCRIPTS_PATH>/core/rotate-path.sh

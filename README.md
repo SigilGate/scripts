@@ -97,7 +97,9 @@ scripts/
 │   └── remove-client.sh        # [атомарный] Удалить клиента из Xray
 ├── core/
 │   ├── README.md
-│   └── rotate-path.sh          # [автономный] Ротация gRPC serviceName
+│   ├── rotate-path.sh          # [автономный] Ротация gRPC serviceName
+│   ├── sigilgate-rotate.service # systemd-сервис (шаблон)
+│   └── sigilgate-rotate.timer  # systemd-таймер (шаблон)
 └── store/
     ├── README.md
     └── commit.sh               # [атомарный] Коммит изменений в хранилище
