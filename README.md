@@ -62,6 +62,7 @@ SIGIL_SSH_PASSWORD=<password>
 | [`users/`](users/) | Управление пользователями | [users/README.md](users/README.md) |
 | [`devices/`](devices/) | Управление устройствами | [devices/README.md](devices/README.md) |
 | [`entry/`](entry/) | Операции с Entry-нодами | [entry/README.md](entry/README.md) |
+| [`core/`](core/) | Операции на Core-ноде | [core/README.md](core/README.md) |
 | [`store/`](store/) | Операции с хранилищем | [store/README.md](store/README.md) |
 | `lib/` | Общая библиотека | `common.sh` |
 
@@ -94,6 +95,9 @@ scripts/
 │   ├── README.md
 │   ├── add-client.sh           # [атомарный] Добавить клиента в Xray
 │   └── remove-client.sh        # [атомарный] Удалить клиента из Xray
+├── core/
+│   ├── README.md
+│   └── rotate-path.sh          # [автономный] Ротация gRPC serviceName
 └── store/
     ├── README.md
     └── commit.sh               # [атомарный] Коммит изменений в хранилище
@@ -103,7 +107,7 @@ scripts/
 
 1. ~~**Управление пользователями и устройствами**~~ — add, update, remove
 2. **Синхронизация хранилища** — push по таймеру, разрешение коллизий
-3. **Ротация путей** — автоматическая ротация gRPC serviceName
+3. ~~**Ротация путей**~~ — автоматическая ротация gRPC serviceName
 4. **Подготовка нод** — автоматизация provision-процедур
 5. **Управление Xray/Nginx** — конфигурация сервисов
 6. **Python-приложение** — оркестрация всех операций, веб-интерфейс
