@@ -61,6 +61,7 @@ SIGIL_SSH_PASSWORD=<password>
 |------------|------------|-------------|
 | [`users/`](users/) | Управление пользователями | [users/README.md](users/README.md) |
 | [`devices/`](devices/) | Управление устройствами | [devices/README.md](devices/README.md) |
+| [`appeals/`](appeals/) | Управление обращениями пользователей | — |
 | [`entry/`](entry/) | Операции с Entry-нодами | [entry/README.md](entry/README.md) |
 | [`core/`](core/) | Операции на Core-ноде | [core/README.md](core/README.md) |
 | [`store/`](store/) | Операции с хранилищем | [store/README.md](store/README.md) |
@@ -91,6 +92,15 @@ scripts/
 │   ├── update.sh               # [оркестратор] Изменить поля + коммит
 │   ├── delete.sh               # [атомарный] Удалить запись устройства
 │   └── remove.sh               # [оркестратор] Удалить устройство + Entry-ноды + коммит
+├── appeals/
+│   ├── create.sh               # [атомарный] Создать запись обращения
+│   ├── add.sh                  # [оркестратор] Создать обращение + коммит
+│   ├── modify.sh               # [атомарный] Изменить поля обращения
+│   ├── update.sh               # [оркестратор] Изменить поля + коммит
+│   ├── append.sh               # [атомарный] Добавить сообщение в обращение
+│   ├── reply.sh                # [оркестратор] Добавить сообщение + коммит
+│   ├── get.sh                  # [read-only] Получить обращение по ID
+│   └── list.sh                 # [read-only] Список обращений с фильтрами
 ├── entry/
 │   ├── README.md
 │   ├── add-client.sh           # [атомарный] Добавить клиента в Xray
