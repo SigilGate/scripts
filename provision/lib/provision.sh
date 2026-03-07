@@ -54,17 +54,22 @@ init_exec_script() {
         "$INIT_USER@$host" bash -s <<< "$script"
 }
 
-# Выполнить скрипт с sudo (ubuntu имеет passwordless sudo)
+# Выполнить скрипт с sudo
+# Скрипт передаётся через base64 чтобы не конфликтовать с stdin sudo -S.
+# Работает как с NOPASSWD sudo, так и с sudo требующим пароль.
 init_sudo() {
     local host="$1"
     local script
     script=$(cat)
+    local encoded
+    encoded=$(printf '%s' "$script" | base64 | tr -d '\n')
     sshpass -p "$INIT_PASS" ssh \
         -o StrictHostKeyChecking=no \
         -o PasswordAuthentication=yes \
         -o BatchMode=no \
         -o ConnectTimeout=15 \
-        "$INIT_USER@$host" "sudo bash -s" <<< "$script"
+        "$INIT_USER@$host" \
+        "echo '$INIT_PASS' | sudo -S bash -c 'echo $encoded | base64 -d | bash'"
 }
 
 # Скопировать файл на ноду через начального пользователя
