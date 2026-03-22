@@ -3,9 +3,11 @@
 # core/sync.sh [оркестратор]
 # Синхронизация git-репозиториев на Core-ноде
 #
-# Выполняет два направления синхронизации:
+# Выполняет синхронизацию:
 #   1. registry → GitHub  (push локальных изменений)
-#   2. GitHub → scripts   (pull удалённых изменений)
+#
+# Шаг "GitHub → scripts" отключён: репозиторий scripts теперь ведётся
+# непосредственно на Core-ноде, pull избыточен.
 #
 # Запускается по systemd timer (sigilgate-sync.timer) каждые 15 минут.
 # Логи доступны через: journalctl -u sigilgate-sync
@@ -24,19 +26,11 @@ ERRORS=0
 
 log_info "=== Синхронизация репозиториев ==="
 
-# --- [1/2] registry → GitHub ---
+# --- [1/1] registry → GitHub ---
 
-log_info "[1/2] registry → GitHub (push)..."
+log_info "[1/1] registry → GitHub (push)..."
 if ! "$SCRIPT_DIR/../store/push.sh"; then
     log_error "registry: ошибка синхронизации"
-    ERRORS=$((ERRORS + 1))
-fi
-
-# --- [2/2] GitHub → scripts ---
-
-log_info "[2/2] GitHub → scripts (pull)..."
-if ! "$SCRIPT_DIR/pull-scripts.sh"; then
-    log_error "scripts: ошибка синхронизации"
     ERRORS=$((ERRORS + 1))
 fi
 
@@ -44,7 +38,7 @@ fi
 
 echo "" >&2
 if [ "$ERRORS" -gt 0 ]; then
-    log_error "=== Синхронизация завершена с ошибками: ${ERRORS} из 2 ==="
+    log_error "=== Синхронизация завершена с ошибками: ${ERRORS} из 1 ==="
     exit 1
 fi
 
