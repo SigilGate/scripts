@@ -71,7 +71,10 @@ REMOTE
 
 # Проверка
 log_info "[3/3] Проверка сертификата..."
-CERT_INFO=$(remote_exec "$HOST" "sudo openssl x509 -in /etc/letsencrypt/live/$DOMAIN/cert.pem -noout -dates 2>/dev/null")
+CERT_INFO=$(remote_sudo "$HOST" <<REMOTE
+openssl x509 -in /etc/letsencrypt/live/$DOMAIN/cert.pem -noout -dates 2>/dev/null
+REMOTE
+)
 log_success "Сертификат получен:"
 log_info "$CERT_INFO"
 log_success "=== TLS готов для $DOMAIN ==="

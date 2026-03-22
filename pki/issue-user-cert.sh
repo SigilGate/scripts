@@ -13,7 +13,7 @@
 #     [--identity <cert-identity>]
 #
 # Пример:
-#   ./pki/issue-user-cert.sh --host 128.22.161.34 --validity +6m
+#   ./pki/issue-user-cert.sh --host 128.22.161.34 --validity +180d
 #
 # Переменные окружения:
 #   SIGIL_SSH_KEY, SIGIL_SSH_USER, SIGIL_SSH_PASSWORD
@@ -29,7 +29,7 @@ load_env
 parse_args "$@"
 
 HOST="${ARGS[host]:-}"
-VALIDITY="${ARGS[validity]:-+6m}"
+VALIDITY="${ARGS[validity]:-+180d}"
 IDENTITY="${ARGS[identity]:-sigil@$HOST}"
 PKI_DIR="${PKI_SSH_DIR:-/root/SigilGate/pki/ssh}"
 CA_KEY="$PKI_DIR/root_ca"

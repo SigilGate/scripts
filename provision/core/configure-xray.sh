@@ -131,6 +131,6 @@ systemctl restart xray
 sleep 2
 REMOTE
 
-STATUS=$(remote_exec "$HOST" "sudo systemctl is-active xray")
+STATUS=$(remote_exec "$HOST" "systemctl is-active xray")
 log_success "Xray: $STATUS"
 log_info "UUID туннеля: $UUID (использовать в configure-xray.sh Entry-нод)"

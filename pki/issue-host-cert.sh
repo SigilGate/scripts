@@ -19,7 +19,7 @@
 #     --host 128.22.161.34 \
 #     --identity core-1 \
 #     --principals 128.22.161.34,core.sigilgate.internal \
-#     --validity +6m
+#     --validity +180d
 #
 # Переменные окружения:
 #   SIGIL_SSH_KEY, SIGIL_SSH_USER, SIGIL_SSH_PASSWORD
@@ -37,7 +37,7 @@ parse_args "$@"
 HOST="${ARGS[host]:-}"
 IDENTITY="${ARGS[identity]:-}"
 PRINCIPALS="${ARGS[principals]:-}"
-VALIDITY="${ARGS[validity]:-+6m}"
+VALIDITY="${ARGS[validity]:-+180d}"
 PKI_DIR="${PKI_SSH_DIR:-/root/SigilGate/pki/ssh}"
 CA_KEY="${ARGS[ca]:-$PKI_DIR/root_ca}"
 
