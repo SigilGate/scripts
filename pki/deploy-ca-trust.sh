@@ -92,7 +92,7 @@ fi
 log_info "[4/4] Перезапуск sshd..."
 remote_sudo "$HOST" << 'REMOTE'
 sshd -t
-systemctl restart sshd
+systemctl restart ssh 2>/dev/null || systemctl restart sshd
 REMOTE
 
 log_success "CA trust задеплоен на $HOST"

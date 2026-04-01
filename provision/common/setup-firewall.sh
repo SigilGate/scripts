@@ -7,7 +7,7 @@
 #   ./provision/common/setup-firewall.sh --host <ip> --role <core|entry>
 #
 # Роли и правила:
-#   core  — SSH (22), HTTPS (443), outbound all
+#   core  — SSH (22), HTTP (80), HTTPS (443), outbound all
 #   entry — SSH (22), HTTP (80), HTTPS (443), outbound all
 #
 # Переменные окружения:
@@ -55,8 +55,8 @@ ufw allow 22/tcp comment "SSH"
 # HTTPS — для всех ролей
 ufw allow 443/tcp comment "HTTPS/gRPC"
 
-# HTTP — только Entry (для certbot и редиректа)
-$([ "$ROLE" = "entry" ] && echo 'ufw allow 80/tcp comment "HTTP (certbot/redirect)"')
+# HTTP — для certbot (первичная выдача сертификата)
+ufw allow 80/tcp comment "HTTP (certbot)"
 
 # Включаем
 ufw --force enable

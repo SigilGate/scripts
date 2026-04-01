@@ -91,7 +91,7 @@ remote_sudo "$HOST" << 'REMOTE'
 grep -q "^HostCertificate" /etc/ssh/sshd_config \
     || echo "HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub" >> /etc/ssh/sshd_config
 sshd -t
-systemctl reload sshd
+systemctl reload ssh 2>/dev/null || systemctl reload sshd
 REMOTE
 
 # Сохраняем копию

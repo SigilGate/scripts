@@ -66,7 +66,7 @@ set_sshd "PubkeyAuthentication" "yes"
 set_sshd "AuthorizedKeysFile" ".ssh/authorized_keys"
 
 sshd -t
-systemctl restart sshd
+systemctl restart ssh 2>/dev/null || systemctl restart sshd
 REMOTE
 log_success "Настройки применены"
 
