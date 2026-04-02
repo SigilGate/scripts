@@ -36,6 +36,7 @@ require_env SIGIL_SSH_PASSWORD
 
 CORE_XRAY_CONF="${SIGIL_CORE_XRAY_CONF:-/usr/local/etc/xray/config.json}"
 CORE_NGINX_DIR="${SIGIL_CORE_NGINX_DIR:-/etc/nginx/sites-enabled}"
+CORE_NGINX_BACKUP_DIR="${SIGIL_CORE_NGINX_BACKUP_DIR:-/etc/nginx/backups}"
 ENTRY_XRAY_CONF="${SIGIL_ENTRY_XRAY_CONF:-/usr/local/etc/xray/config.json}"
 
 # --- Утилиты ---
@@ -71,6 +72,8 @@ update_core() {
     local ts
     ts=$(date '+%Y%m%d_%H%M%S')
 
+    local_sudo mkdir -p "$CORE_NGINX_BACKUP_DIR"
+
     # Бэкап и замена в Xray
     local_sudo cp "$CORE_XRAY_CONF" "${CORE_XRAY_CONF}.bak.${ts}"
     local_sudo sed -i "s|$old_path|$new_path|g" "$CORE_XRAY_CONF"
@@ -79,7 +82,7 @@ update_core() {
     for nginx_conf in "$CORE_NGINX_DIR"/*; do
         [ -f "$nginx_conf" ] || continue
         if grep -q "$old_path" "$nginx_conf" 2>/dev/null; then
-            local_sudo cp "$nginx_conf" "${nginx_conf}.bak.${ts}"
+            local_sudo cp "$nginx_conf" "${CORE_NGINX_BACKUP_DIR}/$(basename "$nginx_conf").bak.${ts}"
             local_sudo sed -i "s|$old_path|$new_path|g" "$nginx_conf"
         fi
     done
@@ -89,7 +92,9 @@ update_core() {
         log_error "Core: валидация Xray не прошла, откат"
         local_sudo cp "${CORE_XRAY_CONF}.bak.${ts}" "$CORE_XRAY_CONF"
         for nginx_conf in "$CORE_NGINX_DIR"/*; do
-            [ -f "${nginx_conf}.bak.${ts}" ] && local_sudo cp "${nginx_conf}.bak.${ts}" "$nginx_conf"
+            [ -f "$nginx_conf" ] || continue
+            backup="${CORE_NGINX_BACKUP_DIR}/$(basename "$nginx_conf").bak.${ts}"
+            [ -f "$backup" ] && local_sudo cp "$backup" "$nginx_conf"
         done
         return 1
     fi
@@ -99,7 +104,9 @@ update_core() {
         log_error "Core: валидация Nginx не прошла, откат"
         local_sudo cp "${CORE_XRAY_CONF}.bak.${ts}" "$CORE_XRAY_CONF"
         for nginx_conf in "$CORE_NGINX_DIR"/*; do
-            [ -f "${nginx_conf}.bak.${ts}" ] && local_sudo cp "${nginx_conf}.bak.${ts}" "$nginx_conf"
+            [ -f "$nginx_conf" ] || continue
+            backup="${CORE_NGINX_BACKUP_DIR}/$(basename "$nginx_conf").bak.${ts}"
+            [ -f "$backup" ] && local_sudo cp "$backup" "$nginx_conf"
         done
         return 1
     fi

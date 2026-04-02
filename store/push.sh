@@ -37,7 +37,13 @@ REMOTE_AHEAD=$(git -C "$SIGIL_STORE_PATH" rev-list "HEAD..origin/${BRANCH}" --co
 # --- Нет локальных изменений ---
 
 if [ "$LOCAL_AHEAD" -eq 0 ]; then
-    log_info "Registry: нет локальных изменений, push не нужен"
+    if [ "$REMOTE_AHEAD" -gt 0 ]; then
+        log_info "Registry: local отстаёт на ${REMOTE_AHEAD} коммит(ов), pull..."
+        git -C "$SIGIL_STORE_PATH" pull --rebase origin "$BRANCH"
+        log_success "Registry: синхронизировано"
+    else
+        log_info "Registry: нет локальных изменений, push не нужен"
+    fi
     exit 0
 fi
 
