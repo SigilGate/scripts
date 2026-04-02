@@ -29,5 +29,8 @@ if git -C "$SIGIL_STORE_PATH" diff --cached --quiet; then
     exit 0
 fi
 
-git -C "$SIGIL_STORE_PATH" commit -m "$MESSAGE" >&2
+git -C "$SIGIL_STORE_PATH" \
+    -c user.name="Sigil Gate Team AI Assistant" \
+    -c user.email="sigilgate@sigilgate.github.io" \
+    commit -m "$MESSAGE" >&2
 log_success "Коммит: $MESSAGE" >&2
