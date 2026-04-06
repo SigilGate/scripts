@@ -1,16 +1,16 @@
 #!/bin/bash
 #
 # trial/find.sh [утилита]
-# Поиск триал-устройств по telegram_id пользователя
+# Поиск триал-устройств по hash_telegram_id пользователя
 #
 # Использование:
-#   ./trial/find.sh --telegram-id <id> [--status active|inactive|archived]
+#   ./trial/find.sh --hash-telegram-id <hash_prefix_16> [--status active|inactive|archived]
 #
 # Выводит JSON-массив [{uuid, device, status, created}, ...] в stdout.
 # Без --status возвращает устройства с любым статусом.
 #
-# Принцип именования триал-устройств: <telegram_id><цифра_лимита>
-# Например: 1234569 — telegram_id=123456, лимит=9
+# Принцип именования триал-устройств: <hash_prefix_16><цифра_лимита>
+# Например: f3a8b2c1d4e5f6a79 — hash_prefix=f3a8b2c1d4e5f6a7, лимит=9
 #
 
 set -euo pipefail
@@ -22,12 +22,12 @@ require_env SIGIL_STORE_PATH
 
 parse_args "$@"
 
-TELEGRAM_ID="${ARGS[telegram-id]:-}"
+HASH_TELEGRAM_ID="${ARGS[hash-telegram-id]:-}"
 STATUS_FILTER="${ARGS[status]:-}"
 TRIAL_USER_ID="${SIGIL_TRIAL_USER_ID:-3}"
 
-if [ -z "$TELEGRAM_ID" ]; then
-    log_error "Использование: $0 --telegram-id <id> [--status active|inactive|archived]" >&2
+if [ -z "$HASH_TELEGRAM_ID" ]; then
+    log_error "Использование: $0 --hash-telegram-id <hash_prefix_16> [--status active|inactive|archived]" >&2
     exit 1
 fi
 
@@ -51,8 +51,8 @@ for DEV_FILE in "$SIGIL_STORE_PATH/devices/"*.json; do
 
     DEVICE_NAME=$(jq -r '.device' "$DEV_FILE")
 
-    # Имя должно начинаться с telegram_id и заканчиваться одной цифрой
-    [[ "$DEVICE_NAME" =~ ^${TELEGRAM_ID}[0-9]$ ]] || continue
+    # Имя должно начинаться с hash_prefix (16 символов) и заканчиваться одной цифрой
+    [[ "$DEVICE_NAME" =~ ^${HASH_TELEGRAM_ID}[0-9]$ ]] || continue
 
     # Фильтр по статусу (если задан)
     if [ -n "$STATUS_FILTER" ]; then

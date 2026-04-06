@@ -7,8 +7,8 @@
 #   ./appeals/list.sh [--status inactive|active|archived] [--user-id <id>]
 #
 # Выводит JSON-массив в stdout, отсортированный по created (новые первыми):
-#   [{id, user_id, username, telegram_id, status, subject, device_uuid,
-#     admin_telegram_id, created, updated}, ...]
+#   [{id, user_id, username, encrypted_telegram_id, status, subject, device_uuid,
+#     admin_encrypted_telegram_id, created, updated}, ...]
 #
 
 set -euo pipefail
@@ -56,7 +56,7 @@ for APPEAL_FILE in "$APPEALS_DIR/"*.json; do
         [ "$FILE_USER_ID" = "$USER_ID_FILTER" ] || continue
     fi
 
-    entries+=("$(jq '{id, user_id, username, telegram_id, status, subject, device_uuid, admin_telegram_id, created, updated}' "$APPEAL_FILE")")
+    entries+=("$(jq '{id, user_id, username, encrypted_telegram_id, status, subject, device_uuid, admin_encrypted_telegram_id, created, updated}' "$APPEAL_FILE")")
 done
 
 if [ ${#entries[@]} -eq 0 ]; then

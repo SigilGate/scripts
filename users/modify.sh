@@ -17,8 +17,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../lib/common.sh"
+source "$SCRIPT_DIR/../lib/crypto.sh"
 load_env
 require_env SIGIL_STORE_PATH
+require_env SIGIL_TELEGRAM_ENCRYPTION_KEY
+require_env SIGIL_TELEGRAM_HASH_KEY
 
 parse_args "$@"
 
@@ -125,15 +128,19 @@ for FIELD in "${CHANGES[@]}"; do
 
     # Маппинг имени аргумента на имя JSON-поля
     case "$FIELD" in
-        telegram-id) JSON_FIELD="telegram_id" ;;
+        telegram-id) JSON_FIELD="hash_telegram_id" ;;  # обрабатывается отдельно ниже
     esac
 
     case "$FIELD" in
         telegram-id)
             if [ -z "$VALUE" ]; then
-                jq ".${JSON_FIELD} = null" "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
+                jq '.hash_telegram_id = null | .encrypted_telegram_id = null' "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
             else
-                jq --argjson val "$VALUE" ".${JSON_FIELD} = \$val" "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
+                NEW_HASH=$(hash_telegram_id "$VALUE")
+                NEW_ENC=$(encrypt_telegram_id "$VALUE")
+                jq --arg h "$NEW_HASH" --arg e "$NEW_ENC" \
+                    '.hash_telegram_id = $h | .encrypted_telegram_id = $e' \
+                    "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
             fi
             ;;
         email|telegram|hash)

@@ -15,8 +15,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../lib/common.sh"
+source "$SCRIPT_DIR/../lib/crypto.sh"
 load_env
 require_env SIGIL_STORE_PATH
+require_env SIGIL_TELEGRAM_ENCRYPTION_KEY
 
 parse_args "$@"
 
@@ -87,11 +89,12 @@ for FIELD in "${CHANGES[@]}"; do
             ;;
         admin-telegram-id)
             if [ -z "$VALUE" ]; then
-                jq '.admin_telegram_id = null' "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
-                log_info "Обращение $APPEAL_ID: admin_telegram_id → null" >&2
+                jq '.admin_encrypted_telegram_id = null' "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
+                log_info "Обращение $APPEAL_ID: admin_encrypted_telegram_id → null" >&2
             else
-                jq --argjson val "$VALUE" '.admin_telegram_id = $val' "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
-                log_info "Обращение $APPEAL_ID: admin_telegram_id → $VALUE" >&2
+                ENCRYPTED_ADMIN=$(encrypt_telegram_id "$VALUE")
+                jq --arg enc "$ENCRYPTED_ADMIN" '.admin_encrypted_telegram_id = $enc' "$TEMP_FILE" > "${TEMP_FILE}.new" && mv "${TEMP_FILE}.new" "$TEMP_FILE"
+                log_info "Обращение $APPEAL_ID: admin_encrypted_telegram_id → [encrypted]" >&2
             fi
             ;;
     esac

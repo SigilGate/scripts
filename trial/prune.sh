@@ -6,7 +6,7 @@
 # Остальные архивные записи удаляются.
 #
 # Использование:
-#   ./trial/prune.sh --telegram-id <id>
+#   ./trial/prune.sh --hash-telegram-id <hash_prefix_16>
 #
 # Вызывает: trial/find.sh, devices/remove.sh
 #
@@ -20,23 +20,23 @@ require_env SIGIL_STORE_PATH
 
 parse_args "$@"
 
-TELEGRAM_ID="${ARGS[telegram-id]:-}"
+HASH_TELEGRAM_ID="${ARGS[hash-telegram-id]:-}"
 
-if [ -z "$TELEGRAM_ID" ]; then
-    log_error "Использование: $0 --telegram-id <id>" >&2
+if [ -z "$HASH_TELEGRAM_ID" ]; then
+    log_error "Использование: $0 --hash-telegram-id <hash_prefix_16>" >&2
     exit 1
 fi
 
-# Получаем все архивные устройства данного telegram_id
-ARCHIVED_JSON=$("$SCRIPT_DIR/find.sh" --telegram-id "$TELEGRAM_ID" --status archived)
+# Получаем все архивные устройства данного hash_prefix
+ARCHIVED_JSON=$("$SCRIPT_DIR/find.sh" --hash-telegram-id "$HASH_TELEGRAM_ID" --status archived)
 COUNT=$(echo "$ARCHIVED_JSON" | jq 'length')
 
 if [ "$COUNT" -le 1 ]; then
-    log_info "Прореживание не требуется: $COUNT архивных устройств для $TELEGRAM_ID" >&2
+    log_info "Прореживание не требуется: $COUNT архивных устройств для hash=$HASH_TELEGRAM_ID" >&2
     exit 0
 fi
 
-log_info "=== Прореживание триал-записей для telegram_id=$TELEGRAM_ID ($COUNT архивных) ===" >&2
+log_info "=== Прореживание триал-записей для hash=$HASH_TELEGRAM_ID ($COUNT архивных) ===" >&2
 
 # Находим минимальную цифру лимита (последний символ имени устройства)
 MIN_DIGIT=$(echo "$ARCHIVED_JSON" | jq -r '

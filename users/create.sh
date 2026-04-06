@@ -21,8 +21,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../lib/common.sh"
+source "$SCRIPT_DIR/../lib/crypto.sh"
 load_env
 require_env SIGIL_STORE_PATH
+require_env SIGIL_TELEGRAM_ENCRYPTION_KEY
+require_env SIGIL_TELEGRAM_HASH_KEY
 
 parse_args "$@"
 
@@ -73,17 +76,19 @@ for USER_FILE in "$SIGIL_STORE_PATH"/users/*.json; do
     fi
 done
 
-# --- Проверка уникальности telegram_id ---
+# --- Проверка уникальности hash_telegram_id ---
 
 if [ -n "$TELEGRAM_ID" ]; then
+    HASH_TG_ID=$(hash_telegram_id "$TELEGRAM_ID")
     for USER_FILE in "$SIGIL_STORE_PATH"/users/*.json; do
         [ -f "$USER_FILE" ] || continue
-        EXISTING_TG_ID=$(jq -r '.telegram_id // empty' "$USER_FILE")
-        if [ "$EXISTING_TG_ID" = "$TELEGRAM_ID" ]; then
-            log_error "Пользователь с Telegram ID $TELEGRAM_ID уже существует"
+        EXISTING_HASH=$(jq -r '.hash_telegram_id // empty' "$USER_FILE")
+        if [ "$EXISTING_HASH" = "$HASH_TG_ID" ]; then
+            log_error "Пользователь с таким Telegram ID уже существует"
             exit 1
         fi
     done
+    ENCRYPTED_TG_ID=$(encrypt_telegram_id "$TELEGRAM_ID")
 fi
 
 # --- Проверка Core-ноды (если указана) ---
@@ -131,13 +136,17 @@ NEW_ID=$((MAX_ID + 1))
 USER_PATH="$SIGIL_STORE_PATH/users/${NEW_ID}.json"
 CREATED=$(date '+%Y-%m-%d')
 
+HASH_TG_ID="${HASH_TG_ID:-}"
+ENCRYPTED_TG_ID="${ENCRYPTED_TG_ID:-}"
+
 jq -n \
     --argjson id "$NEW_ID" \
     --arg username "$USERNAME" \
     --arg status "$STATUS" \
     --arg email "$EMAIL" \
     --arg telegram "$TELEGRAM" \
-    --arg telegram_id "$TELEGRAM_ID" \
+    --arg hash_telegram_id "$HASH_TG_ID" \
+    --arg encrypted_telegram_id "$ENCRYPTED_TG_ID" \
     --arg hash "$HASH" \
     --arg core_node "$CORE_NODE" \
     --arg created "$CREATED" \
@@ -148,7 +157,8 @@ jq -n \
         hash: (if $hash == "" then null else $hash end),
         email: (if $email == "" then null else $email end),
         telegram: (if $telegram == "" then null else $telegram end),
-        telegram_id: (if $telegram_id == "" then null else ($telegram_id | tonumber) end),
+        hash_telegram_id: (if $hash_telegram_id == "" then null else $hash_telegram_id end),
+        encrypted_telegram_id: (if $encrypted_telegram_id == "" then null else $encrypted_telegram_id end),
         core_nodes: (if $core_node == "" then [] else [$core_node] end),
         created: $created
     }' > "$USER_PATH"

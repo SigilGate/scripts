@@ -3,7 +3,7 @@
 # trial/cleanup.sh [оркестратор]
 # Плановая очистка триал-устройств:
 #   1. Истекает активные устройства старше --max-age секунд (по умолчанию 3600)
-#   2. Прореживает архивные записи для каждого telegram_id
+#   2. Прореживает архивные записи для каждого hash_telegram_id
 #
 # Использование:
 #   ./trial/cleanup.sh [--max-age <секунды>]
@@ -69,7 +69,7 @@ log_info "Истекло: $EXPIRED устройств" >&2
 
 log_info "[2/2] Прореживание архивных записей..." >&2
 
-# Собираем уникальные telegram_id из архивных устройств пользователя trial
+# Собираем уникальные hash_prefix из архивных устройств пользователя trial
 declare -A SEEN_IDS
 
 for DEV_FILE in "$SIGIL_STORE_PATH/devices/"*.json; do
@@ -85,17 +85,17 @@ for DEV_FILE in "$SIGIL_STORE_PATH/devices/"*.json; do
 
     DEVICE_NAME=$(jq -r '.device' "$DEV_FILE")
 
-    # Извлекаем telegram_id = все символы кроме последнего
-    TG_ID="${DEVICE_NAME%?}"
-    [[ "$TG_ID" =~ ^[0-9]+$ ]] || continue
+    # Извлекаем hash_prefix = все символы кроме последнего (16 hex-символов)
+    HASH_PREFIX="${DEVICE_NAME%?}"
+    [[ "$HASH_PREFIX" =~ ^[0-9a-f]{16}$ ]] || continue
 
-    SEEN_IDS["$TG_ID"]=1
+    SEEN_IDS["$HASH_PREFIX"]=1
 done
 
-for TG_ID in "${!SEEN_IDS[@]}"; do
-    log_info "Прореживание для telegram_id=$TG_ID" >&2
-    "$SCRIPT_DIR/prune.sh" --telegram-id "$TG_ID" || {
-        log_error "Ошибка прореживания для $TG_ID" >&2
+for HASH_PREFIX in "${!SEEN_IDS[@]}"; do
+    log_info "Прореживание для hash_prefix=$HASH_PREFIX" >&2
+    "$SCRIPT_DIR/prune.sh" --hash-telegram-id "$HASH_PREFIX" || {
+        log_error "Ошибка прореживания для $HASH_PREFIX" >&2
         ERRORS=$((ERRORS + 1))
     }
 done

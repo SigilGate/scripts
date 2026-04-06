@@ -16,8 +16,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../lib/common.sh"
+source "$SCRIPT_DIR/../lib/crypto.sh"
 load_env
 require_env SIGIL_STORE_PATH
+require_env SIGIL_TELEGRAM_ENCRYPTION_KEY
 
 parse_args "$@"
 
@@ -36,6 +38,8 @@ if ! [[ "$TELEGRAM_ID" =~ ^[0-9]+$ ]]; then
     log_error "Telegram ID должен быть положительным целым числом: $TELEGRAM_ID"
     exit 1
 fi
+
+ENCRYPTED_TG_ID=$(encrypt_telegram_id "$TELEGRAM_ID")
 
 # --- Проверка пользователя ---
 
@@ -74,26 +78,26 @@ SUBJECT="${TEXT:0:80}"
 APPEAL_PATH="$APPEAL_DIR/${APPEAL_ID}.json"
 
 jq -n \
-    --arg id          "$APPEAL_ID" \
-    --arg user_id     "$USER_ID" \
-    --arg username    "$USERNAME" \
-    --argjson tg_id   "$TELEGRAM_ID" \
-    --arg device_uuid "$DEVICE_UUID" \
-    --arg subject     "$SUBJECT" \
-    --arg created     "$CREATED" \
-    --arg text        "$TEXT" \
-    --arg ts          "$TS" \
+    --arg id                    "$APPEAL_ID" \
+    --arg user_id               "$USER_ID" \
+    --arg username              "$USERNAME" \
+    --arg encrypted_telegram_id "$ENCRYPTED_TG_ID" \
+    --arg device_uuid           "$DEVICE_UUID" \
+    --arg subject               "$SUBJECT" \
+    --arg created               "$CREATED" \
+    --arg text                  "$TEXT" \
+    --arg ts                    "$TS" \
     '{
-        id:               $id,
-        user_id:          $user_id,
-        username:         $username,
-        telegram_id:      $tg_id,
-        device_uuid:      (if $device_uuid == "" then null else $device_uuid end),
-        status:           "inactive",
-        admin_telegram_id: null,
-        subject:          $subject,
-        created:          $created,
-        updated:          $created,
+        id:                         $id,
+        user_id:                    $user_id,
+        username:                   $username,
+        encrypted_telegram_id:      $encrypted_telegram_id,
+        device_uuid:                (if $device_uuid == "" then null else $device_uuid end),
+        status:                     "inactive",
+        admin_encrypted_telegram_id: null,
+        subject:                    $subject,
+        created:                    $created,
+        updated:                    $created,
         messages: [
             {
                 "from": "user",
